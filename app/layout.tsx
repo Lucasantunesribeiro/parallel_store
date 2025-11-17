@@ -12,9 +12,14 @@ const space = Space_Grotesk({ subsets: ['latin'], variable: '--font-space' });
 const archivo = Archivo_Black({ subsets: ['latin'], weight: '400', variable: '--font-archivo' });
 
 export const metadata: Metadata = {
-  title: 'Parallel Store | Moda urbana carioca',
+  title: 'Parallel Store',
   description: 'Entre o comum e o paralelo, nasce o seu estilo. Parallel Store é o seu destino urbano.',
   metadataBase: new URL('https://parallel.store'),
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
   openGraph: {
     title: 'Parallel Store',
     description: 'Loja urbana inspirada no Rio de Janeiro.',

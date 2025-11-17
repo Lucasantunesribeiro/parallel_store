@@ -12,7 +12,6 @@ import { SearchOverlay } from '@/components/ui/search-overlay';
 import { useAuthStore } from '@/store/auth-store';
 
 const UTILITY_LINKS = [
-  { label: 'Acompanhe seu pedido', href: '/acompanhar-pedido' },
   { label: 'Ajuda', href: '/ajuda' },
   { label: 'Sobre', href: '/sobre' },
   { label: 'Junte-se a nós', href: '/junte-se-a-nos' },

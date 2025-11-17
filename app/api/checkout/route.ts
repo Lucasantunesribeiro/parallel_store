@@ -1,31 +1,94 @@
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
+import { NextRequest, NextResponse } from 'next/server';
+import { stripe } from '@/lib/stripe';
+import { supabase } from '@/lib/supabase';
+import type { CartItem } from '@/types/index';
 
-import { enforceRateLimit } from '@/lib/rate-limit';
+export async function POST(req: NextRequest) {
+  try {
+    const { items, userId, userEmail } = await req.json() as {
+      items: CartItem[];
+      userId: string;
+      userEmail: string;
+    };
 
-const checkoutSchema = z.object({
-  items: z.array(
-    z.object({
-      id: z.string(),
-      quantity: z.number().min(1),
-    }),
-  ),
-  email: z.string().email(),
-});
+    if (!items || items.length === 0) {
+      return NextResponse.json(
+        { error: 'Carrinho vazio' },
+        { status: 400 }
+      );
+    }
 
-export async function POST(request: Request) {
-  const json = await request.json();
-  const identifier = request.headers.get('x-forwarded-for') ?? 'global';
-  if (!enforceRateLimit(`checkout-${identifier}`)) {
-    return NextResponse.json({ error: 'rate-limit' }, { status: 429 });
+    // Cria line items para o Stripe
+    const lineItems = items.map((item) => ({
+      price_data: {
+        currency: 'brl',
+        product_data: {
+          name: item.product.name,
+          description: item.size ? `Tamanho: ${item.size}` : undefined,
+          images: item.product.images[0] ? [item.product.images[0]] : undefined,
+        },
+        unit_amount: Math.round(item.product.price * 100), // Converte para centavos
+      },
+      quantity: item.quantity,
+    }));
+
+    // Calcula total
+    const total = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+
+    // Cria pedido no banco
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        user_id: userId,
+        user_email: userEmail,
+        total,
+        status: 'pending',
+      })
+      .select()
+      .single();
+
+    if (orderError || !order) {
+      throw new Error('Erro ao criar pedido');
+    }
+
+    // Cria itens do pedido
+    const orderItems = items.map((item) => ({
+      order_id: order.id,
+      product_id: item.product.id,
+      product_name: item.product.name,
+      product_price: item.product.price,
+      size: item.size || null,
+      quantity: item.quantity,
+    }));
+
+    await supabase.from('order_items').insert(orderItems);
+
+    // Cria sessão de checkout do Stripe
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      success_url: `${req.nextUrl.origin}/pedido-confirmado?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}`,
+      cancel_url: `${req.nextUrl.origin}/checkout?canceled=true`,
+      customer_email: userEmail,
+      metadata: {
+        orderId: order.id,
+        userId,
+      },
+    });
+
+    // Atualiza pedido com Stripe payment intent ID
+    await supabase
+      .from('orders')
+      .update({ stripe_payment_intent_id: session.id })
+      .eq('id', order.id);
+
+    return NextResponse.json({ sessionId: session.id, url: session.url });
+  } catch (error) {
+    console.error('Erro no checkout:', error);
+    return NextResponse.json(
+      { error: 'Erro ao processar checkout' },
+      { status: 500 }
+    );
   }
-  const parsed = checkoutSchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
-
-  // TODO: integrar com Stripe
-  return NextResponse.json({
-    checkoutUrl: 'https://checkout.stripe.com/pay/mock',
-  });
 }
