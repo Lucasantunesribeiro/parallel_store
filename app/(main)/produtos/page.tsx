@@ -3,18 +3,24 @@ import { ProductCard } from '@/components/products/product-card';
 import { NewReleaseMobileCard } from '@/components/products/new-release-mobile-card';
 import { LayoutToggle } from '@/components/products/layout-toggle';
 import { getProducts } from '@/lib/supabase-server';
+import type { Size } from '@/types/index';
 
 interface ProductsPageProps {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
+const ALLOWED_SIZES: readonly Size[] = ['P', 'M', 'G', 'GG'];
+
 export default async function ProductsPage({ searchParams }: ProductsPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const query = typeof resolvedSearchParams.query === 'string' ? resolvedSearchParams.query : '';
-  const categoryFilter = typeof resolvedSearchParams.category === 'string' ? resolvedSearchParams.category : '';
+  const categoryFilter =
+    typeof resolvedSearchParams.category === 'string' ? resolvedSearchParams.category : '';
   const priceFilter = typeof resolvedSearchParams.price === 'string' ? resolvedSearchParams.price : '';
-  const sizeFilter = typeof resolvedSearchParams.size === 'string' ? resolvedSearchParams.size : '';
+  const sizeFilter =
+    typeof resolvedSearchParams.size === 'string' ? resolvedSearchParams.size : undefined;
   const featuredOnly = resolvedSearchParams.featured === 'true';
+  const size = ALLOWED_SIZES.find((allowedSize) => allowedSize === sizeFilter);
 
   const allProducts = await getProducts();
   const priceRange = parsePriceRange(priceFilter);
@@ -27,7 +33,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     const productCategorySlug = slugify(product.category);
     const matchesCategory = !categoryFilter || productCategorySlug === categoryFilter;
 
-    const matchesSize = !sizeFilter || (product.sizes ?? []).includes(sizeFilter);
+    const matchesSize = !size || (product.sizes ?? []).includes(size);
 
     const matchesPrice =
       !priceRange || (product.price >= priceRange.min && product.price <= priceRange.max);

@@ -102,7 +102,7 @@ export default function AboutPage() {
             <p className="mt-2 text-neutral-600">Marcos importantes da nossa história</p>
           </div>
           <div className="space-y-6">
-            {TIMELINE.map((item, index) => (
+            {TIMELINE.map((item) => (
               <div
                 key={item.year}
                 className="relative flex gap-6 rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm"
