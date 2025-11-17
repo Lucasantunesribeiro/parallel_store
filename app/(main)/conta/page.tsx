@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -66,16 +66,7 @@ export default function MinhaContaPage() {
     }
   }, [isAuthenticated, loading, router]);
 
-  useEffect(() => {
-    if (user && profile) {
-      setEmail(user.email || '');
-      setFullName(profile.full_name || '');
-      fetchOrders();
-      fetchFavorites();
-    }
-  }, [user, profile]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!user) {
       console.log('fetchOrders: user not available');
       return;
@@ -114,9 +105,9 @@ export default function MinhaContaPage() {
     } finally {
       setLoadingOrders(false);
     }
-  };
+  }, [user]);
 
-  const fetchFavorites = async () => {
+  const fetchFavorites = useCallback(async () => {
     if (!user) {
       console.log('fetchFavorites: user not available');
       return;
@@ -146,7 +137,16 @@ export default function MinhaContaPage() {
     } finally {
       setLoadingFavorites(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user && profile) {
+      setEmail(user.email || '');
+      setFullName(profile.full_name || '');
+      fetchOrders();
+      fetchFavorites();
+    }
+  }, [user, profile, fetchOrders, fetchFavorites]);
 
   const openDeleteModal = (orderId: string) => {
     setOrderToDelete(orderId);
