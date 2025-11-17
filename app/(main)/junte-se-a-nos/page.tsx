@@ -190,7 +190,7 @@ export default function JoinPage() {
               </p>
               <div className="space-y-3">
                 <Link
-                  href="https://instagram.com/parallel.store"
+                  href="https://www.instagram.com/parallel_store._/"
                   target="_blank"
                   className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 transition hover:bg-neutral-100"
                 >

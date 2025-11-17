@@ -6,7 +6,6 @@ const columns = [
     items: [
       { label: 'Coleções', href: '/produtos' },
       { label: 'Lançamentos', href: '/produtos?featured=true' },
-      { label: 'Lookbook', href: '/categorias/lifestyle' },
     ],
   },
   {
@@ -20,7 +19,7 @@ const columns = [
   {
     title: 'Social',
     items: [
-      { label: 'Instagram', href: 'https://instagram.com/parallel.store' },
+      { label: 'Instagram', href: 'https://www.instagram.com/parallel_store._/' },
       { label: 'TikTok', href: 'https://tiktok.com/@parallel' },
       { label: 'YouTube', href: 'https://youtube.com/@parallelstore' },
     ],

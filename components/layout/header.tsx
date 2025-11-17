@@ -24,12 +24,27 @@ export function Header() {
   const totalItems = useCartStore((state) => state.items.reduce((sum, item) => sum + item.quantity, 0));
   const toggleCart = useCartStore((state) => state.toggle);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const signOut = useAuthStore((state) => state.signOut);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   const isActive = (href: string) => pathname?.startsWith(href);
   const navLinks = useMemo(() => NAV_LINKS, []);
+
+  const utilityLinks = useMemo(
+    () =>
+      isAuthenticated
+        ? [
+            { label: 'Ajuda', href: '/ajuda' },
+            { label: 'Sobre', href: '/sobre' },
+            { label: 'Junte-se a nós', href: '/junte-se-a-nos' },
+            { label: 'Minha conta', href: '/conta' },
+            { label: 'Sair', action: 'logout' as const },
+          ]
+        : UTILITY_LINKS,
+    [isAuthenticated],
+  );
   const ensureAuth = (next?: () => void) => {
     if (!isAuthenticated) {
       router.push('/login');
@@ -49,7 +64,7 @@ export function Header() {
 
   return (
     <>
-      <TopHeader />
+      <TopHeader utilityLinks={utilityLinks} signOut={signOut} />
       <header
         className={`sticky top-0 z-40 border-b transition-colors ${
           isScrolled ? 'bg-[#e8e8e8] border-neutral-300 shadow-md' : 'bg-[#e8e8e8]/95 border-neutral-200'
@@ -122,7 +137,7 @@ export function Header() {
           />
         </div>
       </header>
-      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} utilityLinks={utilityLinks} signOut={signOut} />
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
@@ -211,23 +226,43 @@ function MobileHeaderBar({
   );
 }
 
-function TopHeader() {
+function TopHeader({
+  utilityLinks,
+  signOut,
+}: {
+  utilityLinks: readonly (
+    | { label: string; href: string; highlight?: boolean }
+    | { label: string; action: 'logout' }
+  )[];
+  signOut: () => void;
+}) {
   return (
     <div className="hidden border-b border-neutral-300 bg-black text-white lg:block">
       <div className="mx-auto w-full max-w-[1920px] px-4 lg:px-8">
         <div className="flex h-10 items-center justify-end text-[0.58rem] uppercase tracking-[0.45em]">
           <nav className="flex items-center gap-3 text-[0.58rem]">
-            {UTILITY_LINKS.map((link, index) => (
-              <Fragment key={link.href}>
+            {utilityLinks.map((link, index) => (
+              <Fragment key={'href' in link ? link.href : link.label}>
                 {index > 0 && <div className="h-4 w-px bg-white/20" />}
-                <Link
-                  href={link.href}
-                  className={`font-semibold tracking-[0.45em] transition ${
-                    'highlight' in link && link.highlight ? 'text-yellow-400 hover:text-yellow-300' : 'text-white/80 hover:text-white'
-                  }`}
-                >
-                  {link.label}
-                </Link>
+                {'action' in link && link.action === 'logout' ? (
+                  <button
+                    onClick={signOut}
+                    className="font-semibold tracking-[0.45em] text-white/80 hover:text-white transition"
+                  >
+                    {link.label}
+                  </button>
+                ) : (
+                  <Link
+                    href={'href' in link ? link.href : '/'}
+                    className={`font-semibold tracking-[0.45em] transition ${
+                      'highlight' in link && link.highlight
+                        ? 'text-yellow-400 hover:text-yellow-300'
+                        : 'text-white/80 hover:text-white'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                )}
               </Fragment>
             ))}
           </nav>
@@ -237,7 +272,20 @@ function TopHeader() {
   );
 }
 
-function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+function MobileMenu({
+  open,
+  onClose,
+  utilityLinks,
+  signOut,
+}: {
+  open: boolean;
+  onClose: () => void;
+  utilityLinks: readonly (
+    | { label: string; href: string; highlight?: boolean }
+    | { label: string; action: 'logout' }
+  )[];
+  signOut: () => void;
+}) {
   if (!open) return null;
 
   return (
@@ -278,18 +326,33 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
           {/* Utility Links */}
           <div className="mt-12 pt-8 border-t border-white/10">
             <div className="flex flex-col gap-4">
-              {UTILITY_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={onClose}
-                  className={`text-sm font-medium transition-colors ${
-                    'highlight' in link && link.highlight ? 'text-yellow-400 hover:text-yellow-300' : 'text-white/70 hover:text-white'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {utilityLinks.map((link) =>
+                'action' in link && link.action === 'logout' ? (
+                  <button
+                    key={link.label}
+                    onClick={() => {
+                      signOut();
+                      onClose();
+                    }}
+                    className="text-sm font-medium text-white/70 hover:text-white transition-colors text-left"
+                  >
+                    {link.label}
+                  </button>
+                ) : (
+                  <Link
+                    key={'href' in link ? link.href : link.label}
+                    href={'href' in link ? link.href : '/'}
+                    onClick={onClose}
+                    className={`text-sm font-medium transition-colors ${
+                      'highlight' in link && link.highlight
+                        ? 'text-yellow-400 hover:text-yellow-300'
+                        : 'text-white/70 hover:text-white'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ),
+              )}
             </div>
           </div>
         </div>

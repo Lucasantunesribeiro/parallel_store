@@ -32,16 +32,28 @@ export const useAuthStore = create<AuthState>()(
           const { data: { session } } = await supabase.auth.getSession();
 
           if (session?.user) {
-            // Busca perfil do usuário
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
+            // Tenta buscar perfil, mas não falha se não conseguir (RLS)
+            let profile = null;
+            try {
+              const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
 
+              if (error) {
+                console.warn('Aviso ao buscar perfil (continuando autenticado):', error);
+              } else {
+                profile = data;
+              }
+            } catch (profileError) {
+              console.warn('Perfil não disponível (continuando autenticado):', profileError);
+            }
+
+            // Mantém usuário autenticado mesmo sem perfil
             set({
               user: session.user,
-              profile: profile || null,
+              profile: profile,
               isAuthenticated: true,
               loading: false
             });
@@ -52,15 +64,28 @@ export const useAuthStore = create<AuthState>()(
           // Listener para mudanças de auth
           supabase.auth.onAuthStateChange(async (_event, session) => {
             if (session?.user) {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
+              // Tenta buscar perfil, mas não falha se não conseguir
+              let profile = null;
+              try {
+                const { data, error } = await supabase
+                  .from('profiles')
+                  .select('*')
+                  .eq('id', session.user.id)
+                  .single();
 
+                if (error) {
+                  console.warn('Aviso ao buscar perfil (continuando autenticado):', error);
+                } else {
+                  profile = data;
+                }
+              } catch (profileError) {
+                console.warn('Perfil não disponível (continuando autenticado):', profileError);
+              }
+
+              // Mantém usuário autenticado mesmo sem perfil
               set({
                 user: session.user,
-                profile: profile || null,
+                profile: profile,
                 isAuthenticated: true
               });
             } else {
@@ -86,15 +111,27 @@ export const useAuthStore = create<AuthState>()(
           if (error) return { error };
 
           if (data.user) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', data.user.id)
-              .single();
+            // Tenta buscar perfil, mas não falha se não conseguir
+            let profile = null;
+            try {
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', data.user.id)
+                .single();
+
+              if (profileError) {
+                console.warn('Aviso ao buscar perfil após signup (continuando):', profileError);
+              } else {
+                profile = profileData;
+              }
+            } catch (profileError) {
+              console.warn('Perfil não disponível após signup (continuando):', profileError);
+            }
 
             set({
               user: data.user,
-              profile: profile || null,
+              profile: profile,
               isAuthenticated: true
             });
           }
@@ -115,15 +152,27 @@ export const useAuthStore = create<AuthState>()(
           if (error) return { error };
 
           if (data.user) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', data.user.id)
-              .single();
+            // Tenta buscar perfil, mas não falha se não conseguir
+            let profile = null;
+            try {
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', data.user.id)
+                .single();
+
+              if (profileError) {
+                console.warn('Aviso ao buscar perfil após login (continuando):', profileError);
+              } else {
+                profile = profileData;
+              }
+            } catch (profileError) {
+              console.warn('Perfil não disponível após login (continuando):', profileError);
+            }
 
             set({
               user: data.user,
-              profile: profile || null,
+              profile: profile,
               isAuthenticated: true
             });
           }
@@ -151,14 +200,23 @@ export const useAuthStore = create<AuthState>()(
 
           if (error) return { error: new Error(error.message) };
 
-          // Atualiza o perfil local
-          const { data: updatedProfile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
+          // Tenta atualizar o perfil local, mas não falha se não conseguir
+          try {
+            const { data: updatedProfile, error: fetchError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', user.id)
+              .single();
 
-          set({ profile: updatedProfile || null });
+            if (fetchError) {
+              console.warn('Aviso ao buscar perfil atualizado (continuando):', fetchError);
+            } else {
+              set({ profile: updatedProfile });
+            }
+          } catch (profileError) {
+            console.warn('Perfil atualizado não disponível (continuando):', profileError);
+          }
+
           return { error: null };
         } catch (error) {
           return { error: error as Error };

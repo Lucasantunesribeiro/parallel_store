@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, Package } from 'lucide-react';
 import { useCartStore } from '@/store/cart-store';
 
-export default function PedidoConfirmadoPage() {
+function PedidoConfirmadoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const clearCart = useCartStore((state) => state.clear);
@@ -110,5 +110,19 @@ export default function PedidoConfirmadoPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PedidoConfirmadoPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-yellow-400 border-r-transparent"></div>
+        </div>
+      </div>
+    }>
+      <PedidoConfirmadoContent />
+    </Suspense>
   );
 }

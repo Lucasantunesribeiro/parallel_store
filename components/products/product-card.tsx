@@ -1,25 +1,33 @@
-"use client";
+'use client';
 
+import { useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Heart, Plus } from "lucide-react";
 
 import type { Product } from "@/types/index";
 import { formatCurrency } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
 import { useAuthStore } from "@/store/auth-store";
+import { useFavoritesStore } from "@/store/favorites-store";
 
 interface ProductCardProps {
   product: Product;
   priority?: boolean;
 }
 
+let favoritesLoadedForUser: string | null = null;
+
 export function ProductCard({ product, priority = false }: ProductCardProps) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const toggleCart = useCartStore((state) => state.toggle);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const userId = useAuthStore((state) => state.user?.id);
+  const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
+  const isFavorite = useFavoritesStore((state) => state.isFavorite(product.id));
+  const loadFavorites = useFavoritesStore((state) => state.loadFavorites);
 
   const handleNavigate = () => {
     router.push(`/produtos/${product.slug}`);
@@ -35,12 +43,32 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
     toggleCart(true);
   };
 
+  const handleFavorite = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    await toggleFavorite(product);
+  };
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       handleNavigate();
     }
   };
+
+  useEffect(() => {
+    if (userId && favoritesLoadedForUser !== userId) {
+      favoritesLoadedForUser = userId;
+      loadFavorites(userId);
+    }
+
+    if (!userId) {
+      favoritesLoadedForUser = null;
+    }
+  }, [userId, loadFavorites]);
 
   return (
     <motion.article
@@ -62,6 +90,15 @@ export function ProductCard({ product, priority = false }: ProductCardProps) {
         priority={priority}
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
+      <button
+        type="button"
+        aria-pressed={isFavorite}
+        onClick={handleFavorite}
+        className="absolute right-4 top-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-primary shadow-panel transition hover:bg-white sm:right-6 sm:top-6"
+      >
+        <Heart className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+        <span className="sr-only">Favoritar produto</span>
+      </button>
       {product.featured && (
         <span className="pointer-events-none absolute left-6 top-6 rounded-full bg-secondary px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-black">
           Drop exclusivo

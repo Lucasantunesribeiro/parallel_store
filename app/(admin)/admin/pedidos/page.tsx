@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import type { Order } from '@/types/index';
+import type { OrderWithItems } from '@/types/index';
 import { Package, Clock, CheckCircle, Truck, XCircle } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -15,7 +15,7 @@ const STATUS_CONFIG = {
 };
 
 export default function PedidosAdminPage() {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
@@ -116,7 +116,7 @@ export default function PedidosAdminPage() {
                   </h3>
                   <p className="text-sm text-neutral-600">{order.user_email}</p>
                   <p className="text-xs text-neutral-500 mt-1">
-                    {new Date(order.created_at).toLocaleString('pt-BR')}
+                    {order.created_at ? new Date(order.created_at).toLocaleString('pt-BR') : 'Data não disponível'}
                   </p>
                 </div>
 

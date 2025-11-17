@@ -23,7 +23,7 @@ export function InstagramGrid() {
           </div>
         </div>
         <a
-          href="https://instagram.com/parallel.store"
+          href="https://www.instagram.com/parallel_store._/"
           target="_blank"
           className="text-xs uppercase tracking-[0.4em] text-secondary"
           rel="noreferrer"

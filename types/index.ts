@@ -71,3 +71,18 @@ export interface Favorite {
   product_id: string;
   created_at?: string;
 }
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  product_name: string;
+  product_price: number;
+  size?: string;
+  quantity: number;
+  created_at?: string;
+}
+
+export interface OrderWithItems extends Order {
+  order_items?: OrderItem[];
+}

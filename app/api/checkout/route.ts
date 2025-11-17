@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import type { CartItem } from '@/types/index';
 
 export async function POST(req: NextRequest) {
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     const total = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
 
     // Cria pedido no banco
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({
         user_id: userId,
@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (orderError || !order) {
-      throw new Error('Erro ao criar pedido');
+      console.error('Erro ao criar pedido no Supabase:', orderError);
+      throw new Error(`Erro ao criar pedido: ${orderError?.message || 'Desconhecido'}`);
     }
 
     // Cria itens do pedido
@@ -63,14 +64,19 @@ export async function POST(req: NextRequest) {
       quantity: item.quantity,
     }));
 
-    await supabase.from('order_items').insert(orderItems);
+    const { error: itemsError } = await supabaseAdmin.from('order_items').insert(orderItems);
+
+    if (itemsError) {
+      console.error('Erro ao criar itens do pedido:', itemsError);
+      throw new Error(`Erro ao criar itens: ${itemsError.message}`);
+    }
 
     // Define payment methods baseado na escolha
     const paymentMethodTypes = paymentMethod === 'pix' ? ['pix'] : ['card'];
 
     // Cria sessão de checkout do Stripe
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: paymentMethodTypes,
+      payment_method_types: paymentMethodTypes as any,
       line_items: lineItems,
       mode: 'payment',
       success_url: `${req.nextUrl.origin}/pedido-confirmado?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}`,
@@ -92,16 +98,24 @@ export async function POST(req: NextRequest) {
     });
 
     // Atualiza pedido com Stripe payment intent ID
-    await supabase
+    await supabaseAdmin
       .from('orders')
       .update({ stripe_payment_intent_id: session.id })
       .eq('id', order.id);
 
     return NextResponse.json({ sessionId: session.id, url: session.url });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro no checkout:', error);
+    console.error('Detalhes do erro:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+    });
     return NextResponse.json(
-      { error: 'Erro ao processar checkout' },
+      {
+        error: 'Erro ao processar checkout',
+        details: error?.message || 'Erro desconhecido'
+      },
       { status: 500 }
     );
   }

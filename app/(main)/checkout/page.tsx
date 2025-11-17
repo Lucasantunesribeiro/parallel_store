@@ -154,18 +154,17 @@ export default function CheckoutPage() {
                   <div className="text-2xl">💳</div>
                 </label>
 
-                <label className={'flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition ' + (paymentMethod === 'pix' ? 'border-yellow-400 bg-yellow-50' : 'border-neutral-200 hover:border-neutral-300')}>
+                <label className="flex items-center gap-3 p-4 border rounded-lg opacity-50 cursor-not-allowed border-neutral-200">
                   <input
                     type="radio"
                     name="payment"
                     value="pix"
-                    checked={paymentMethod === 'pix'}
-                    onChange={(e) => setPaymentMethod(e.target.value as 'card' | 'pix')}
+                    disabled
                     className="w-4 h-4 text-yellow-400"
                   />
                   <div className="flex-1">
                     <div className="font-semibold">PIX</div>
-                    <div className="text-xs text-neutral-600">Aprovação em até 1 hora</div>
+                    <div className="text-xs text-red-600">Temporariamente indisponível</div>
                   </div>
                   <div className="text-2xl">📱</div>
                 </label>

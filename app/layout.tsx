@@ -7,6 +7,7 @@ import { Providers } from './providers';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { CartDrawer } from '@/components/cart/cart-drawer';
+import { CookieBanner } from '@/components/cookie-banner';
 
 const space = Space_Grotesk({ subsets: ['latin'], variable: '--font-space' });
 const archivo = Archivo_Black({ subsets: ['latin'], weight: '400', variable: '--font-archivo' });
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main className="flex-1">{children}</main>
             <Footer />
             <CartDrawer />
+            <CookieBanner />
           </div>
         </Providers>
       </body>
