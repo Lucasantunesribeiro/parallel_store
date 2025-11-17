@@ -33,9 +33,16 @@ export interface Order {
   user_email: string;
   items: CartItem[];
   total: number;
-  status: 'pending' | 'paid' | 'shipped' | 'delivered';
+  status: 'pending_payment' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   stripe_payment_intent_id?: string;
+  payment_method: 'card' | 'pix';
+  pix_qr_code?: string;
+  pix_expires_at?: string;
+  tracking_code?: string;
+  shipped_at?: string;
+  delivered_at?: string;
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface Profile {
@@ -43,6 +50,7 @@ export interface Profile {
   email: string;
   full_name?: string;
   avatar_url?: string;
+  is_admin?: boolean;
   created_at?: string;
   updated_at?: string;
 }

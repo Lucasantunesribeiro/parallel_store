@@ -5,10 +5,11 @@ import type { CartItem } from '@/types/index';
 
 export async function POST(req: NextRequest) {
   try {
-    const { items, userId, userEmail } = await req.json() as {
+    const { items, userId, userEmail, paymentMethod = 'card' } = await req.json() as {
       items: CartItem[];
       userId: string;
       userEmail: string;
+      paymentMethod?: 'card' | 'pix';
     };
 
     if (!items || items.length === 0) {
@@ -42,7 +43,8 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         user_email: userEmail,
         total,
-        status: 'pending',
+        status: 'pending_payment',
+        payment_method: paymentMethod,
       })
       .select()
       .single();
@@ -63,9 +65,12 @@ export async function POST(req: NextRequest) {
 
     await supabase.from('order_items').insert(orderItems);
 
+    // Define payment methods baseado na escolha
+    const paymentMethodTypes = paymentMethod === 'pix' ? ['pix'] : ['card'];
+
     // Cria sessão de checkout do Stripe
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: paymentMethodTypes,
       line_items: lineItems,
       mode: 'payment',
       success_url: `${req.nextUrl.origin}/pedido-confirmado?session_id={CHECKOUT_SESSION_ID}&order_id=${order.id}`,
@@ -74,7 +79,16 @@ export async function POST(req: NextRequest) {
       metadata: {
         orderId: order.id,
         userId,
+        paymentMethod,
       },
+      // Configurações específicas para PIX
+      ...(paymentMethod === 'pix' && {
+        payment_method_options: {
+          pix: {
+            expires_after_seconds: 60 * 60 * 24, // 24 horas
+          },
+        },
+      }),
     });
 
     // Atualiza pedido com Stripe payment intent ID

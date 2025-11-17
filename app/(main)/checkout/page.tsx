@@ -17,6 +17,7 @@ export default function CheckoutPage() {
   const items = useCartStore((state) => state.items);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix'>('card');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -46,6 +47,7 @@ export default function CheckoutPage() {
           items,
           userId: user.id,
           userEmail: user.email,
+          paymentMethod,
         }),
       });
 
@@ -133,6 +135,43 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            <div className="mb-6">
+              <h3 className="font-semibold mb-3">Método de Pagamento</h3>
+              <div className="space-y-3">
+                <label className={'flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition ' + (paymentMethod === 'card' ? 'border-yellow-400 bg-yellow-50' : 'border-neutral-200 hover:border-neutral-300')}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="card"
+                    checked={paymentMethod === 'card'}
+                    onChange={(e) => setPaymentMethod(e.target.value as 'card' | 'pix')}
+                    className="w-4 h-4 text-yellow-400"
+                  />
+                  <div className="flex-1">
+                    <div className="font-semibold">Cartão de Crédito</div>
+                    <div className="text-xs text-neutral-600">Processamento instantâneo</div>
+                  </div>
+                  <div className="text-2xl">💳</div>
+                </label>
+
+                <label className={'flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition ' + (paymentMethod === 'pix' ? 'border-yellow-400 bg-yellow-50' : 'border-neutral-200 hover:border-neutral-300')}>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="pix"
+                    checked={paymentMethod === 'pix'}
+                    onChange={(e) => setPaymentMethod(e.target.value as 'card' | 'pix')}
+                    className="w-4 h-4 text-yellow-400"
+                  />
+                  <div className="flex-1">
+                    <div className="font-semibold">PIX</div>
+                    <div className="text-xs text-neutral-600">Aprovação em até 1 hora</div>
+                  </div>
+                  <div className="text-2xl">📱</div>
+                </label>
+              </div>
+            </div>
+
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm mb-4">
                 {error}
@@ -150,7 +189,7 @@ export default function CheckoutPage() {
                   PROCESSANDO...
                 </>
               ) : (
-                'FINALIZAR COMPRA'
+                paymentMethod === 'pix' ? 'PAGAR COM PIX' : 'PAGAR COM CARTÃO'
               )}
             </button>
 
