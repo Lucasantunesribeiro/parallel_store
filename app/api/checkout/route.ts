@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import type { CartItem } from '@/types/index';
 
 export async function POST(req: NextRequest) {
@@ -37,6 +37,8 @@ export async function POST(req: NextRequest) {
     const total = items.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
 
     // Cria pedido no banco
+    const supabaseAdmin = getSupabaseAdmin();
+
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
       .insert({
