@@ -171,8 +171,15 @@ export default function MinhaContaPage() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Erro ao deletar pedido');
+        let message = 'Erro ao deletar pedido';
+        try {
+          const error = await response.json();
+          message = error?.error || message;
+        } catch {
+          const text = await response.text();
+          if (text) message = text;
+        }
+        throw new Error(message);
       }
 
       // Remove o pedido da lista local
